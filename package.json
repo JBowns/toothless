@@ -1,0 +1,47 @@
+{
+  "name": "toothless",
+  "version": "1.0.0",
+  "main": "src/index.js",
+  "bin": {
+    "toothless": "bin/cli"
+  },
+  "scripts": {
+    "commit": "git-cz",
+    "release": "standard-version",
+    "lint": "eslint ./src/**/*.js",
+    "lint:fix": "eslint **/*.js --fix"
+  },
+  "dependencies": {
+    "@octokit/rest": "^16.23.4",
+    "axios": "^0.18.0",
+    "chalk": "^2.4.2",
+    "execa": "^1.0.0",
+    "lerna": "^3.13.2",
+    "meow": "^5.0.0",
+    "npm-registry-client": "^8.6.0",
+    "simple-git": "^1.110.0"
+  },
+  "devDependencies": {
+    "commitizen": "^3.1.1",
+    "cz-conventional-changelog": "2.1.0",
+    "eslint": "^6.0.1",
+    "standard-version": "^6.0.1"
+  },
+  "linters": {
+    "src/**/*.{js}": [
+      "eslint"
+    ]
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/jbowns/toothless"
+  },
+  "bugs": {
+    "url": "https://github.com/jbowns/toothless/issues"
+  },
+  "config": {
+    "commitizen": {
+      "path": "./node_modules/cz-conventional-changelog"
+    }
+  }
+}
