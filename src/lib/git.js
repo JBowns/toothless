@@ -35,7 +35,7 @@ const findCommitByBranchName = async (branches, name) => {
   };
 };
 
-const currentStatus = ({ verbose }) =>
+const currentStatus = () =>
   git()
     .silent(true)
     .status()
@@ -55,9 +55,7 @@ const currentStatus = ({ verbose }) =>
       });
     })
     .catch(({ message }) => {
-      if (verbose) {
-        console.error(message);
-      }
+      console.error(message);
       throw new Error(`unable to determine repsitory status.`);
     });
 
