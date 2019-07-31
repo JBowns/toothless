@@ -11,13 +11,13 @@ const cli = {
   flags: {}
 };
 
-const execute = async () => {
-  const { config } = await init({ verify: false });
+const execute = async (cli) => {
+  const { config } = await init(cli, { verify: false });
   await pushPublish(config);
   await unblockRepositoryMerges(config);
 };
+
 module.exports = {
   ...cli,
   execute
-}
-
+};

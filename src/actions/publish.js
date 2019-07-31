@@ -9,20 +9,20 @@ const {
 
 const cli = {
   command: 'publish',
-  options: [{ name: '--skip-npm', description: 'Don\'t attempt to publish the new packages to npm.' }],
+  options: [{ name: '--skip-npm-publish', description: 'Don\'t attempt to publish the new packages to npm.' }],
   examples: [{ name: 'publish', description: 'Executes the complete publish workflow.' }],
   flags: {
-    skipNpm: {
+    skipNpmPublish: {
       type: 'boolean'
     }
   }
 };
 
-const execute = async () => {
-  const { config } = await init({ verify: true });
+const execute = async (cli) => {
+  const { config } = await init(cli, { verify: true });
   await blockRepositoryMerges(config);
   await lernaVersion(config);
-  if (!cli.flags.skipNpm) {
+  if (!cli.flags.skipNpmPublish) {
     await lernaPublish(config);
   }
   await pushPublish(config);
@@ -32,4 +32,4 @@ const execute = async () => {
 module.exports = {
   ...cli,
   execute
-}
+};

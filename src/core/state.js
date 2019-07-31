@@ -6,7 +6,7 @@ const { getProfile: getNpmProfile } = require('../lib/npm');
 const { getProfile: getGitHubProfile, getState: getGitHubState } = require('../lib/github');
 const { verifyState, verifyEnvs } = require('./verification');
 
-const init = async ({ verify = true }) => {
+const init = async ({ flags = {} } = {}, { verify = true } = {}) => {
 
   if (!fs.existsSync('/.dockerenv')) {
     throw Error("until this package explicitly supports a non-containerised version please don't execute it locally")
@@ -75,6 +75,7 @@ const init = async ({ verify = true }) => {
   const git = await getGitState(config.git)
   const github = await getGitHubState(config.github, git)
   const state = {
+    flags,
     config,
     vcs: { git, github },
     ssh,

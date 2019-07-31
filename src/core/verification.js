@@ -42,10 +42,14 @@ const verifyState = state => {
   return state;
 };
 
-const verifyNpmProfile = ({ profile: { npm } }) => {
+const verifyNpmProfile = ({ flags: { skipNpmVerification }, profile: { npm } }) => {
   console.log('verifying npm profile returned successfully.');
-  if (!npm) {
-    throw new Error('unable to fetch NPM profile, please ensure your token is valid.');
+  if (skipNpmVerification) {
+    console.warn('skipping npm profile verification.');
+  } else {
+    if (!npm) {
+      throw new Error('unable to fetch NPM profile, please ensure your token is valid.');
+    }
   }
 };
 
@@ -153,24 +157,36 @@ const verifyGitHubDefaultBranchProtectionRulesMatchRemote = ({ vcs: { github: { 
   }
 };
 
-const verifyNpmTokenPublishConfiguration = ({ profile: { npm: { auth: { readonly } } } }) => {
+const verifyNpmTokenPublishConfiguration = ({ flags: { skipNpmVerification }, profile: { npm: { auth: { readonly } = {} } = {} } }) => {
   console.log('verifying npm token has appropriate permissions to publish.');
-  if (readonly === true) {
-    throw new Error(`the NPM token you have provided is read-only and therefore unable to publish.`);
+  if (skipNpmVerification) {
+    console.warn('skipping npm profile verification.');
+  } else {
+    if (readonly === true) {
+      throw new Error(`the NPM token you have provided is read-only and therefore unable to publish.`);
+    }
   }
 };
 
-const verifyNpmAccount2FAConfiguration = ({ profile: { npm: { tfa: { mode } } } }) => {
+const verifyNpmAccount2FAConfiguration = ({ flags: { skipNpmVerification }, profile: { npm: { tfa: { mode } = {} } = {} } }) => {
   console.log('verifying npm profile has appropriate 2FA permissions.');
-  if (mode === NPM_2FA_AUTH_AND_WRITES) {
-    throw new Error(`the NPM accounts 2FA configuration is too restrictive for this automated process, please use '${NPM_2FA_AUTH_ONLY}' instead of '${NPM_2FA_AUTH_AND_WRITES}'`);
+  if (skipNpmVerification) {
+    console.warn('skipping npm profile verification.');
+  } else {
+    if (mode === NPM_2FA_AUTH_AND_WRITES) {
+      throw new Error(`the NPM accounts 2FA configuration is too restrictive for this automated process, please use '${NPM_2FA_AUTH_ONLY}' instead of '${NPM_2FA_AUTH_AND_WRITES}'`);
+    }
   }
 };
 
-const verifyNpmAccountOrgPrivileges = ({ profile: { npm: { organisation: { access } } } }) => {
+const verifyNpmAccountOrgPrivileges = ({ flags: { skipNpmVerification }, profile: { npm: { organisation: { access } = {} } = {} } }) => {
   console.log('verifying npm profile has appropriate permissions to publish.');
-  if (![NPM_ORG_MEMBER, NPM_ORG_ADMIN, NPM_ORG_OWNER].some(type => type === access)) {
-    throw new Error(`the NPM account doesn't have the appropriate permissions to publish`);
+  if (skipNpmVerification) {
+    console.warn('skipping npm profile verification.');
+  } else {
+    if (![NPM_ORG_MEMBER, NPM_ORG_ADMIN, NPM_ORG_OWNER].some(type => type === access)) {
+      throw new Error(`the NPM account doesn't have the appropriate permissions to publish`);
+    }
   }
 };
 

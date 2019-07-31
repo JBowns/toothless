@@ -11,8 +11,8 @@ const cli = {
   flags: {}
 };
 
-const execute = async () => {
-  const { config } = await init({ verify: true });
+const execute = async (cli) => {
+  const { config } = await init(cli, { verify: true });
   await blockRepositoryMerges(config);
   await lernaVersion(config);
 };

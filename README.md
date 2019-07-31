@@ -61,7 +61,7 @@ Pushes the prior commit and tags to remote and subsequently unblocks the reposit
 
 Publish first calls `toothless version` and then proceeds to call `lerna publish from-package` which publishes the packages to npm. Once completed `toothless push` is called to complete the publish process.
 
-### toothless publish --skip-npm
+### toothless publish --skip-npm-publish
 
 As the name would suggest this command calls `toothless version`, `toothless push` and skips publishing the packages to npm.
 
