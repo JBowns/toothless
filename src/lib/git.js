@@ -65,7 +65,7 @@ const latestStatus = config => fetch(config).then(currentStatus);
 
 const latestTags = async () => {
 
-  const parseTags = tags => tags
+  const parseTags = tags => (tags || '')
   .split('\n')
   .filter(Boolean)
   .map(str => {
