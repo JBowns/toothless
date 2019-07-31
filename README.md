@@ -51,7 +51,7 @@ Verify gathers information about npm, github and git so that it can ensure the r
 
 ### toothless version
 
-This command carries out the appropriate validation, blocks the repository and then calls `lerna version --yes --no-commit-hooks --no-push` this results in a publish commit and tag being generated.
+This command first verifies the repository state, blocks and then calls `lerna version --yes --no-commit-hooks --no-push` this results in a publish commit and tag being generated.
 
 ### toothless push
 

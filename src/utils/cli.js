@@ -37,7 +37,7 @@ const buildCommand = ({ command = '', actions = [], options = [], globals = [] }
     actions.length ? '<action>' : '',
     options.length || globals.length ? '[options]' : '',
   ].filter(Boolean).join(' ');
-  return `    $ mono ${args}`;
+  return `    $ toothless ${args}`;
 };
 
 const buildUsage = ({ command, actions, options, globals, examples }) => {
