@@ -14,6 +14,7 @@ const init = async ({ flags = {} } = {}, { verify = true } = {}) => {
 
   verifyEnvs([
     'NPM_ORG',
+    'NPM_REGISTRY',
     'NPM_TOKEN',
     'GITHUB_KEY',
     'GITHUB_TOKEN',
@@ -26,6 +27,7 @@ const init = async ({ flags = {} } = {}, { verify = true } = {}) => {
   const {
     VERBOSE,
     NPM_ORG,
+    NPM_REGISTRY,
     NPM_TOKEN,
     GITHUB_KEY,
     GITHUB_PASSPHRASE,
@@ -50,7 +52,8 @@ const init = async ({ flags = {} } = {}, { verify = true } = {}) => {
     npm: {
       ...global,
       token: NPM_TOKEN,
-      org: NPM_ORG
+      org: NPM_ORG,
+      registry: NPM_REGISTRY
     },
     git: {
       ...global,

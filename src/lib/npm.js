@@ -2,11 +2,10 @@ const fs = require('fs');
 const NpmRegistyClient = require('npm-registry-client');
 const axios = require('axios');
 
-const NPM_REGISTRY = 'registry.npmjs.org';
 const NPM_RC = '.npmrc';
 
-const applyPublishToken = ({ token }) => {
-  fs.writeFileSync(NPM_RC, `//${NPM_REGISTRY}/:_authToken=${token}\n`, {
+const applyPublishToken = ({ token, registry }) => {
+  fs.writeFileSync(NPM_RC, `//${registry}/:_authToken=${token}\n`, {
     encoding: 'utf8',
     mode: '0600',
     flag: 'w'
@@ -30,11 +29,11 @@ const getProfile = async config => {
       auth: tokens.find(({ token }) => token === shard) || {}
     };
   }
-  return null;
+  return undefined;
 };
 
-const getUser = ({ verbose, token }) =>
-  axios.get(`https://${NPM_REGISTRY}/-/npm/v1/user`, {
+const getUser = ({ verbose, token, registry }) =>
+  axios.get(`https://${registry}/-/npm/v1/user`, {
     headers: {
       'Authorization': `Bearer ${token}`
     }
@@ -53,8 +52,8 @@ const getUser = ({ verbose, token }) =>
     return null;
   });
 
-const getTokens = ({ token }) =>
-  axios.get(`https://${NPM_REGISTRY}/-/npm/v1/tokens`, {
+const getTokens = ({ token, registry }) =>
+  axios.get(`https://${registry}/-/npm/v1/tokens`, {
     headers: {
       'Authorization': `Bearer ${token}`
     }
@@ -66,10 +65,10 @@ const getOrganisationPermissions = async (config, username) => {
   return access;
 };
 
-const getOrganisationMembers = ({ token, org }) =>
+const getOrganisationMembers = ({ token, org, registry }) =>
   new Promise((resolve, reject) => {
     const client = new NpmRegistyClient({});
-    client.org('ls', `https://${NPM_REGISTRY}`, {
+    client.org('ls', `https://${registry}`, {
       auth: { token },
       org
     },
