@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [1.1.1](https://github.com/jbowns/toothless/compare/v1.1.0...v1.1.1) (2019-07-31)
+
+
+### Build System
+
+* **npm:** added env to npmignore ([96a4be1](https://github.com/jbowns/toothless/commit/96a4be1))
+
+
+
 ## [1.1.0](https://github.com/jbowns/toothless/compare/v1.0.1...v1.1.0) (2019-07-31)
 
 
