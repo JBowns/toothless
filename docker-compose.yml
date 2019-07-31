@@ -1,0 +1,36 @@
+version: '3.7'
+
+services:
+  toothless:
+    build:
+      context: .
+      dockerfile: docker/toothless/Dockerfile
+    container_name: toothless
+    command: toothless verify --skip-npm-verification
+    env_file: ./test.env
+    ports:
+      - 8080:8080
+    networks:
+      - toothless-network
+    volumes:
+      - .:/toothless
+      - /toothless/node_modules
+    stdin_open: true
+    tty: true
+    depends_on:
+      - verdaccio
+  verdaccio:
+    build:
+      context: docker/verdaccio
+    container_name: verdaccio
+    environment:
+      - VERDACCIO_PORT=4873
+    ports:
+      - 4873:4873
+    networks:
+      - toothless-network
+
+networks:
+  toothless-network:
+    driver: bridge
+    external: false
