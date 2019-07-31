@@ -141,11 +141,18 @@ const getUser = async config => {
 };
 
 const getPublicKeys = async (config, username) => {
-  return github(config, async ({ client }) => {
+  return github(config, async ({ client, ...args }) => {
     const {
-      data: keys = []
+      data: profileKeys = []
     } = await client.users.listPublicKeysForUser({ username });
-    return keys.map(({ key }) => key);
+    const {
+      data: repositoryKeys = []
+    } = await client.repos.listDeployKeys(args);
+    
+    return [
+      ...repositoryKeys.filter(({ read_only }) => !read_only).map(({ key }) => key),
+      ...profileKeys.map(({ key }) => key)
+    ];
   });
 };
 
@@ -168,7 +175,7 @@ const getProfile = async config => {
       keys
     };
   }
-  return null;
+  return undefined;
 };
 
 const applyExtendedBranchProtection = config => {
