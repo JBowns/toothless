@@ -5,18 +5,12 @@ const { GITHUB_PUBLISH_CONTEXT } = require('../core/constants');
 
 const SAVED_BRANCH_PROTECTION_RULES = 'saved-branch-protection-rules.json';
 
-const github = ({ token, ...obj }, callback) => {
+const github = async ({ token, ...obj }, callback) => {
   const client = new Octokit({
     auth: `token ${token}`
   });
   const config = { ...obj, client };
-  return new Promise((resolve, reject) => {
-    try {
-      resolve(callback(config));
-    } catch (err) {
-      reject(err);
-    }
-  });
+  return await callback(config);
 };
 
 const saveBranchProtectionRules = branchProtectionRules => {
