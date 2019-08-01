@@ -9,13 +9,12 @@ function create-repository() {
     -H "Authorization: token $GITHUB_TOKEN" \
     -d "{ \"owner\": \"$GITHUB_OWNER\", \"name\": \"$GITHUB_REPO\", \"description\": \"testing $GITHUB_REPO\", \"private\": true }"
 
+  local key=$(cat /root/.ssh/id_rsa.pub)
   echo "Adding deploy key to GitHub repository '$GITHUB_REPO'"
-
-  local PUBLIC_KEY=$(cat /root/.ssh/id_rsa.pub)
-  curl --fail -X POST \
+  curl -X POST \
     "https://api.github.com/repos/$GITHUB_OWNER/$GITHUB_REPO/keys" \
     -H "Authorization: token $GITHUB_TOKEN" \
-    -d "{ \"title\": \"key\", \"key\": \"$PUBLIC_KEY\", \"read_only\": false }"
+    -d "{ \"title\": \"key\", \"key\": \"$key\", \"read_only\": false }"
 }
 
 function add-branch-protection() {

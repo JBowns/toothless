@@ -1,11 +1,11 @@
 version: '3.7'
 
 services:
-  toothless:
+  monorepo:
     build:
       context: .
       dockerfile: docker/toothless/Dockerfile
-    container_name: toothless
+    container_name: monorepo
     command: toothless verify --skip-npm-verification
     env_file: ./test.env
     ports:
