@@ -64,6 +64,7 @@ const blockRepositoryMerges = async ({ github, git, npm }) => {
     await verifyRepositoryState(git);
     await applyPublishToken(npm);
   } catch (err) {
+    console.error(err);
     await unblockRepositoryMerge(github, GITHUB_COMMIT_STATUS_SUCCESS, PUBLISH_STOPPED_MSG);
     throw err;
   }
@@ -76,6 +77,7 @@ const lernaVersion = async ({ github }) => {
       timeout: COMMAND_TIMEOUT
     }).then(handleProcess).catch(handleProcess);
   } catch (err) {
+    console.error(err);
     await unblockRepositoryMerge(github, GITHUB_COMMIT_STATUS_SUCCESS, PUBLISH_STOPPED_MSG);
     throw err;
   }
@@ -88,6 +90,7 @@ const lernaPublish = async ({ github }) => {
       timeout: COMMAND_TIMEOUT
     }).then(handleProcess).catch(handleProcess);
   } catch (err) {
+    console.error(err);
     await applyPullRequestStatus({ ...github, state: GITHUB_COMMIT_STATUS_ERROR, description: PUBLISH_ERROR_MSG });
     throw err;
   }
@@ -103,6 +106,7 @@ const pushPublish = async ({ github, git }) => {
     console.log('pushing tags...');
     await pushTags(git);
   } catch (err) {
+    console.error(err);
     await applyPullRequestStatus({ ...github, state: GITHUB_COMMIT_STATUS_ERROR, description: PUSH_ERROR_MSG });
     throw err;
   }

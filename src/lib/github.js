@@ -31,7 +31,7 @@ const saveBranchProtectionRules = branchProtectionRules => {
 
 const deleteSavedBranchProtectionRules = () => {
   if (fs.existsSync(SAVED_BRANCH_PROTECTION_RULES)) {
-    console.log('Deleting OfflineBranchProtectionRules');
+    console.log('deleting OfflineBranchProtectionRules');
     fs.unlinkSync(SAVED_BRANCH_PROTECTION_RULES);
   } else {
     console.log('deleting OfflineBranchProtectionRules (Skipping)');
@@ -116,8 +116,9 @@ const getOpenPullRequests = ({ client, owner, repo }) => {
   return client.pullRequests.list({ owner, repo, state: 'open', per_page: 100 });
 };
 
-const setCommitStatus = ({ client, owner, repo }, { sha, context, state, description }) => {
-  console.log(`Applying '${state}' status check to commit '${sha}'`);
+const setCommitStatus = ({ client, owner, repo }, { number, sha, context, state, description }) => {
+  const identifier = number ? `pull '#${number}' at commit '${sha}'` : `commit '${sha}'`;
+  console.log(`applying '${state}' status to '${context}' context for ${identifier}`);
   return client.repos.createStatus({ owner, repo, sha, state, description, context });
 };
 
@@ -210,7 +211,8 @@ const applyPullRequestStatus = config => {
   return github(config, async ({ state, description, ...args }) => {
     const context = GITHUB_PUBLISH_CONTEXT;
     const { data } = await getOpenPullRequests(args);
-    return Promise.all(data.map(({ head: { sha } }) => setCommitStatus(args, { sha, context, state, description })));
+    
+    return Promise.all(data.map(({ number, head: { sha } }) => setCommitStatus(args, { number, sha, context, state, description })));
   });
 };
 
