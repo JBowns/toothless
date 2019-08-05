@@ -1,12 +1,12 @@
 const global = require('./global');
-const verify = require('./verify');
+const config = require('./config');
 const version = require('./version');
 const publish = require('./publish');
 const push = require('./push');
 
 module.exports = {
   global,
-  verify,
+  config,
   version,
   publish,
   push

@@ -45,9 +45,13 @@ Now although these two problems aren't difficult to correct, handling them in an
 ## :computer: Usage
 The primary command for most cases will be `toothless publish`, however assuming something catastrophic occurs Toothless also gives you the granularity to execute each part of the workflow independently.
 
-### toothless verify
+### toothless config
 
-Verify gathers information about npm, github and git so that it can ensure the repository is in a valid state before attempting to publish.
+Config prints all configuration (**including sensitive data**) gathered from npm, github and git.
+
+### toothless config --verify
+
+This option enables you to ensure the repository is in a valid state before attempting to publish.
 
 ### toothless version
 
