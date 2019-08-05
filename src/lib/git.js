@@ -96,7 +96,7 @@ const getState = async config => {
   };
 };
 
-const init = async (config, github) => {
+const init = async ({ git: config }, github) => {
   const { name, email } = github;
   createGitConfig(name, email);
 };

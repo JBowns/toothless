@@ -59,7 +59,7 @@ const extractAgentPIDAndSocket = out => {
   };
 };
 
-const init = async config => {
+const init = async ({ ssh: config }) => {
   const { priv, passphrase } = config;
   const envs = await startAgent();
   

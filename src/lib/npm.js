@@ -16,8 +16,8 @@ const revertPublishToken = () => {
   fs.unlinkSync(NPM_RC);
 };
 
-const getProfile = async config => {
-  const user = await getUser(config);
+const getProfile = async ({ npm: config, flags }) => {
+  const user = await getUser(config, flags);
   if (user) {
     const tokens = await getTokens(config);
     const access = await getOrganisationPermissions(config, user.username);
@@ -32,25 +32,25 @@ const getProfile = async config => {
   return undefined;
 };
 
-const getUser = ({ verbose, token, registry }) =>
+const getUser = ({ token, registry }, { skipNpmVerification }) =>
   axios.get(`https://${registry}/-/npm/v1/user`, {
     headers: {
       'Authorization': `Bearer ${token}`
     }
   })
-  .then(({ data: {
-    name: username,
-    fullname: name,
-    email,
-    tfa
-  } = {} }) =>
-    ({ username, name, email, tfa }))
-  .catch(err => {
-    if (verbose) {
-      console.error(err);
-    }
-    return null;
-  });
+    .then(({ data: {
+      name: username,
+      fullname: name,
+      email,
+      tfa
+    } = {} }) =>
+      ({ username, name, email, tfa }))
+    .catch(err => {
+      if (!skipNpmVerification) {
+        console.error(err);
+      }
+      return null;
+    });
 
 const getTokens = ({ token, registry }) =>
   axios.get(`https://${registry}/-/npm/v1/tokens`, {

@@ -117,7 +117,7 @@ const setCommitStatus = ({ client, owner, repo }, { number, sha, context, state,
 };
 
 const getUser = async config => {
-  return github(config, async ({ verbose, client }) =>
+  return github(config, ({ client }) =>
     client.users.getAuthenticated()
       .then(({
         data: {
@@ -127,9 +127,7 @@ const getUser = async config => {
         } = {}
       }) => ({ username, name, email }))
       .catch(err => {
-        if (verbose) {
-          console.error(err);
-        }
+        console.error(err);
         return null;
       })
   );
@@ -158,7 +156,7 @@ const getRepositoryPermissions = (config, username) => {
   });
 };
 
-const getProfile = async config => {
+const getProfile = async ({ github: config }) => {
   const user = await getUser(config);
   if (user) {
     const keys = await getPublicKeys(config, user.username);
@@ -230,7 +228,7 @@ const overrideCommitStatus = async (config, { commit, state, description }) => {
   });
 };
 
-const getState = async (config, git) => {
+const getState = async ({ github: config }, git) => {
   const { remote: { commit } } = git;
   return {
     commit,

@@ -20,9 +20,10 @@ const cli = {
 
 const execute = async (cli) => {
   const { config } = await init(cli, { verify: true });
+  const { flags: { skipNpmPublish } } = cli;
   await blockRepositoryMerges(config);
   await lernaVersion(config);
-  if (!cli.flags.skipNpmPublish) {
+  if (!skipNpmPublish) {
     await lernaPublish(config);
   }
   await pushPublish(config);

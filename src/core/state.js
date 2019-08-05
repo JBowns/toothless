@@ -25,7 +25,6 @@ const init = async ({ flags = {} } = {}, { verify = true } = {}) => {
   ]);
 
   const {
-    VERBOSE,
     NPM_ORG,
     NPM_REGISTRY,
     NPM_TOKEN,
@@ -37,48 +36,40 @@ const init = async ({ flags = {} } = {}, { verify = true } = {}) => {
     GIT_RELEASE_BRANCH
   } = process.env;
 
-  const global = {
-    verbose: VERBOSE === 'true'
-  };
-
   const config = {
+    flags,
     github: {
-      ...global,
       token: GITHUB_TOKEN,
       owner: GITHUB_OWNER,
       repo: GITHUB_REPO,
       branch: GIT_RELEASE_BRANCH
     },
     npm: {
-      ...global,
       token: NPM_TOKEN,
       org: NPM_ORG,
       registry: NPM_REGISTRY
     },
     git: {
-      ...global,
       release: GIT_RELEASE_BRANCH
     },
     ssh: {
-      ...global,
       priv: GITHUB_KEY,
       passphrase: GITHUB_PASSPHRASE
     }
   };
 
-  const ssh = await initSsh(config.ssh);
+  const ssh = await initSsh(config);
 
   const profile = {
-    github: await getGitHubProfile(config.github),
-    npm: await getNpmProfile(config.npm)
-  };
+    github: await getGitHubProfile(config),
+    npm: await getNpmProfile(config)
+  };  
 
   await initGit(config.git, profile.github);
 
-  const git = await getGitState(config.git)
-  const github = await getGitHubState(config.github, git)
+  const git = await getGitState(config)
+  const github = await getGitHubState(config, git)
   const state = {
-    flags,
     config,
     vcs: { git, github },
     ssh,
