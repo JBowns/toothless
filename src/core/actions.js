@@ -1,4 +1,5 @@
 const execa = require('execa');
+const fs = require('fs');
 
 const {
   applyPullRequestStatus,
@@ -30,6 +31,8 @@ const PUSH_ERROR_MSG = 'Push encountered an error';
 
 const COMMAND_TIMEOUT = 60000;
 
+const LERNA_PUBLISHED_PACKAGES_REGEX = /^ - (.*)@([\d\\.?]*)$/mg;
+
 const blockRepositoryMerge = async (github, state, description) => {
   await applyExtendedBranchProtection(github);
   await applyPullRequestStatus({ ...github, state, description });
@@ -50,12 +53,29 @@ const approvePublishCommit = async (git, github) => {
   return overrideCommitStatus(github, { commit, description, state: GITHUB_COMMIT_STATUS_SUCCESS });
 };
 
-const handleProcess = ({ code, timedOut, killed, failed, stdout, stderr, signal, cmd }) => {
+const extractPublishedPackages = (result) => {
+  let packages = [];
+  let match = null;
+  const { stdout } = result;
+  const regex = new RegExp(LERNA_PUBLISHED_PACKAGES_REGEX, "mg")
+  
+  while ((match = regex.exec(stdout)) !== null) {
+    const [, name, version] = match;
+    packages.push({ name, version });
+  }
+  fs.writeFileSync('published-packages.json', JSON.stringify(packages, null, 2));
+
+  return result;
+};
+
+const handleProcess = (result) => {
+  const { code, timedOut, killed, failed, stdout, stderr, signal, cmd } = result;
   console.log(stdout);
   console.log(stderr);
   if (code > 0 || timedOut === true || killed === true || failed === true) {
     throw new Error(`command failed '${cmd}' with ${JSON.stringify({ code, timedOut, killed, failed, signal })}`);
   }
+  return result;
 };
 
 const blockRepositoryMerges = async ({ github, git, npm }) => {
@@ -88,7 +108,10 @@ const lernaPublish = async ({ github }) => {
     console.log('lerna publish...');
     await execa('lerna', ['publish', 'from-package', '--yes'], {
       timeout: COMMAND_TIMEOUT
-    }).then(handleProcess).catch(handleProcess);
+    })
+      .then(handleProcess)
+      .then(extractPublishedPackages)
+      .catch(handleProcess);
   } catch (err) {
     console.error(err);
     await applyPullRequestStatus({ ...github, state: GITHUB_COMMIT_STATUS_ERROR, description: PUBLISH_ERROR_MSG });
