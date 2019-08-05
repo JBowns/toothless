@@ -1,7 +1,10 @@
 const Octokit = require('@octokit/rest');
+const _ = require('underscore');
 const fs = require('fs');
+const chalk = require('chalk');
 
 const { GITHUB_PUBLISH_CONTEXT } = require('../core/constants');
+const { colorise } = require('../utils/json');
 
 const SAVED_BRANCH_PROTECTION_RULES = 'saved-branch-protection-rules.json';
 
@@ -18,7 +21,7 @@ const saveBranchProtectionRules = branchProtectionRules => {
     console.log('saving OfflineBranchProtectionRules (Skipping)');
   } else {
     const data = JSON.stringify(branchProtectionRules, null, 2);
-    console.log('saving OfflineBranchProtectionRules', data);
+    console.log('saving OfflineBranchProtectionRules', colorise(branchProtectionRules));
     fs.writeFileSync(SAVED_BRANCH_PROTECTION_RULES, data);
   }
 };
@@ -49,61 +52,107 @@ const fetchBaselineBranchProtectionRules = () => {
     console.log(err);
     throw Error(`unable to parse default branch protection rules '${GITHUB_DEFAULT_BRANCH_PROTECTION_RULES}'`);
   }
-  const { RequiredStatusChecks = null, AdminEnforcement = null } = rules;
-  if (RequiredStatusChecks === null) {
-    throw Error(`please supply the default required status check  '${JSON.stringify({ RequiredStatusChecks: [] })}'`);
-  }
-  if (AdminEnforcement === null) {
-    throw Error(`please supply the default admin enforcement rule '${JSON.stringify({ AdminEnforcement: false })}'`);
-  }
   return rules;
-}
-
-const fetchLatestBranchProtectionRules = ({ client, owner, repo, branch }) =>
-  Promise.all([
-    client.repos.getProtectedBranchAdminEnforcement({ owner, repo, branch }),
-    client.repos.listProtectedBranchRequiredStatusChecksContexts({ owner, repo, branch })
-  ]).then(([{ data: { enabled } }, { data }]) => ({
-    AdminEnforcement: enabled,
-    RequiredStatusChecks: data
-  }));
-
-const transitionAdminEnforcement = async (
-  { client, owner, repo, branch },
-  { AdminEnforcement: from },
-  { AdminEnforcement: to }
-) => {
-  if (from !== to) {
-    console.log('applying ProtectedBranchAdminEnforcement', to);
-    if (to) {
-      await client.repos.addProtectedBranchAdminEnforcement({ owner, repo, branch });
-    } else {
-      await client.repos.removeProtectedBranchAdminEnforcement({ owner, repo, branch });
-    }
-  } else {
-    console.log('transition ProtectedBranchAdminEnforcement (Skipping)');
-  }
 };
 
-const transitionRequiredStatusChecks = async (
-  { client, owner, repo, branch },
-  { RequiredStatusChecks: from },
-  { RequiredStatusChecks: to }
-) => {
-  if ((from.length === to.length) & from.every(e => to.includes(e))) {
+const fetchLatestBranchProtectionRules = ({ client, owner, repo, branch }) =>
+  client.repos.getBranchProtection({
+    owner,
+    repo,
+    branch,
+    mediaType: {
+      previews: ['luke-cage']
+    }
+  }).then(({ data }) => {
+    const removeAttrIfKeyContains = (data, attr) => {
+      Object.keys(data).forEach(key => {
+        if (key.includes(attr)) {
+          delete data[key];
+        } else if (data[key] && typeof data[key] === 'object' && !Array.isArray(data[key])) {
+          removeAttrIfKeyContains(data[key], attr);
+        }
+      });
+    };
+    removeAttrIfKeyContains(data, 'url');
+    const { enforce_admins: { enabled }, ...rules } = data;
+    return {
+      ...rules,
+      enforce_admins: enabled
+    };
+  });
+
+const updateBranchProtectionRules = ({ client, owner, repo, branch }, from, to) => {
+
+  const {
+    required_status_checks = null,
+    enforce_admins = null,
+    required_pull_request_reviews = null,
+    restrictions = null
+  } = to;
+
+  if (from.enforce_admins === enforce_admins) {
+    console.log('transition ProtectedBranchAdminEnforcement (Skipping)');
+  } else {
+    console.log('applying ProtectedBranchAdminEnforcement', colorise(enforce_admins));
+  }
+
+  if ((from.required_status_checks.contexts.length === required_status_checks.contexts.length) && from.required_status_checks.contexts.every(e => required_status_checks.contexts.includes(e))) {
     console.log('transition RequiredStatusChecks (Skipping)');
   } else {
-    const strict = true;
-    const contexts = to;
-    console.log('applying RequiredStatusChecks', contexts);
-    await client.repos.updateProtectedBranchRequiredStatusChecks({
-      owner,
-      repo,
-      branch,
-      contexts,
-      strict
-    });
+    console.log('applying RequiredStatusChecks', colorise(required_status_checks));
   }
+
+  if (_.isEqual(from.required_pull_request_reviews, required_pull_request_reviews)) {
+    console.log('transition RequiredApprovingReviewCount (Skipping)');
+  } else {
+    console.log('applying RequiredApprovingReviewCount', colorise(required_pull_request_reviews));
+  }
+
+  return client.repos.updateBranchProtection({
+    owner,
+    repo,
+    branch,
+    mediaType: {
+      previews: ['luke-cage']
+    },
+    required_status_checks,
+    enforce_admins,
+    required_pull_request_reviews,
+    restrictions
+  });
+};
+
+const applyExtendedBranchProtection = config => {
+  return github(config, async args => {
+
+    let from = await fetchLatestBranchProtectionRules(args);
+    const { required_status_checks: { contexts } } = from;
+
+    if (contexts.includes(GITHUB_PUBLISH_CONTEXT)) {
+      console.warn(chalk.yellow(`previously failed run detected, saving default branch protection rules instead`));
+      saveBranchProtectionRules(fetchBaselineBranchProtectionRules());
+    } else {
+      saveBranchProtectionRules(from);
+    }
+
+    let to = JSON.parse(JSON.stringify(from));
+    to.required_status_checks.contexts = Array.from(new Set([...contexts, GITHUB_PUBLISH_CONTEXT]));
+    to.required_status_checks.strict = true;
+    to.required_pull_request_reviews = null;
+    to.enforce_admins = true;
+
+    await updateBranchProtectionRules(args, from, to);
+
+  });
+};
+
+const revertExtendedBranchProtection = config => {
+  return github(config, async args => {
+    const from = await fetchLatestBranchProtectionRules(args);
+    const to = fetchSavedBranchProtectionRules();
+    await updateBranchProtectionRules(args, from, to);
+    deleteSavedBranchProtectionRules();
+  })
 };
 
 const getOpenPullRequests = ({ client, owner, repo }) => {
@@ -116,23 +165,6 @@ const setCommitStatus = ({ client, owner, repo }, { number, sha, context, state,
   return client.repos.createStatus({ owner, repo, sha, state, description, context });
 };
 
-const getUser = async config => {
-  return github(config, ({ client }) =>
-    client.users.getAuthenticated()
-      .then(({
-        data: {
-          login: username,
-          name,
-          email
-        } = {}
-      }) => ({ username, name, email }))
-      .catch(err => {
-        console.error(err);
-        return null;
-      })
-  );
-};
-
 const getPublicKeys = async (config, username) => {
   return github(config, async ({ client, ...args }) => {
     const {
@@ -141,7 +173,7 @@ const getPublicKeys = async (config, username) => {
     const {
       data: repositoryKeys = []
     } = await client.repos.listDeployKeys(args);
-    
+
     return [
       ...repositoryKeys.filter(({ read_only }) => !read_only).map(({ key }) => key),
       ...profileKeys.map(({ key }) => key)
@@ -153,6 +185,35 @@ const getRepositoryPermissions = (config, username) => {
   return github(config, ({ client, owner, repo }) => {
     return client.repos.getCollaboratorPermissionLevel({ owner, repo, username })
       .then(({ data: { permission } }) => permission);
+  });
+};
+
+const applyPullRequestStatus = config => {
+  return github(config, async ({ state, description, ...args }) => {
+    const context = GITHUB_PUBLISH_CONTEXT;
+    const { data } = await getOpenPullRequests(args);
+
+    return Promise.all(data.map(({ number, head: { sha } }) => setCommitStatus(args, { number, sha, context, state, description })));
+  });
+};
+
+const getLatestCommitStatuses = (config, ref) => {
+  return github(config, async args => {
+    const { client, ...options } = args;
+    const { required_status_checks: { contexts = [] } = {} } = await fetchLatestBranchProtectionRules(args);
+    const { data: statuses = [] } = await client.repos.listStatusesForRef({ ...options, ref });
+
+    return contexts.filter(name => name !== GITHUB_PUBLISH_CONTEXT).map(name => {
+      const { context = name, state = '' } = statuses.find(({ context }) => context === name) || {};
+      return { context, state };
+    });
+  });
+};
+
+const overrideCommitStatus = async (config, { commit, state, description }) => {
+  return github(config, async args => {
+    const { required_status_checks: { contexts = [] } = {} } = await fetchLatestBranchProtectionRules(args);
+    return Promise.all(contexts.map(context => setCommitStatus(args, { sha: commit, context, state, description })));
   });
 };
 
@@ -171,61 +232,21 @@ const getProfile = async ({ github: config }) => {
   return undefined;
 };
 
-const applyExtendedBranchProtection = config => {
-  return github(config, async args => {
-    const from = await fetchLatestBranchProtectionRules(args);
-    if (from.RequiredStatusChecks.includes(GITHUB_PUBLISH_CONTEXT)) {
-      console.warn(`previously failed run detected, saving default branch protection rules instead`);
-      saveBranchProtectionRules(fetchBaselineBranchProtectionRules());
-    } else {
-      saveBranchProtectionRules(from);
-    }
-    await transitionRequiredStatusChecks(args, from, {
-      RequiredStatusChecks: Array.from(new Set([...from.RequiredStatusChecks, GITHUB_PUBLISH_CONTEXT]))
-    });
-    await transitionAdminEnforcement(args, from, {
-      AdminEnforcement: true
-    });
-  });
-};
-
-const revertExtendedBranchProtection = config => {
-  return github(config, async args => {
-    const from = await fetchLatestBranchProtectionRules(args);
-    const to = fetchSavedBranchProtectionRules();
-    await transitionAdminEnforcement(args, from, to);
-    await transitionRequiredStatusChecks(args, from, to);
-    deleteSavedBranchProtectionRules();
-  })
-};
-
-const applyPullRequestStatus = config => {
-  return github(config, async ({ state, description, ...args }) => {
-    const context = GITHUB_PUBLISH_CONTEXT;
-    const { data } = await getOpenPullRequests(args);
-    
-    return Promise.all(data.map(({ number, head: { sha } }) => setCommitStatus(args, { number, sha, context, state, description })));
-  });
-};
-
-const getLatestCommitStatuses = (config, ref) => {
-  return github(config, async args => {
-    const { client, ...options } = args;
-    const { RequiredStatusChecks: checks = [] } = await fetchLatestBranchProtectionRules(args);
-    const { data: statuses = [] } = await client.repos.listStatusesForRef({ ...options, ref });
-
-    return checks.filter(name => name !== GITHUB_PUBLISH_CONTEXT).map(name => {
-      const { context = name, state = '' } = statuses.find(({ context }) => context === name) || {};
-      return { context, state };
-    });
-  });
-};
-
-const overrideCommitStatus = async (config, { commit, state, description }) => {
-  return github(config, async args => {
-    const { RequiredStatusChecks: checks = [] } = await fetchLatestBranchProtectionRules(args);
-    return Promise.all(checks.map(context => setCommitStatus(args, { sha: commit, context, state, description })));
-  });
+const getUser = async config => {
+  return github(config, ({ client }) =>
+    client.users.getAuthenticated()
+      .then(({
+        data: {
+          login: username,
+          name,
+          email
+        } = {}
+      }) => ({ username, name, email }))
+      .catch(err => {
+        console.error(err);
+        return null;
+      })
+  );
 };
 
 const getState = async ({ github: config }, git) => {

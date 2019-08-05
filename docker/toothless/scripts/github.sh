@@ -30,7 +30,11 @@ function add-branch-protection() {
     "contexts": ["continuous-integration"]
   },
   "enforce_admins": null,
-  "required_pull_request_reviews": null,
+  "required_pull_request_reviews": {
+    "dismiss_stale_reviews": true,
+    "require_code_owner_reviews": false,
+    "required_approving_review_count": 2
+  },
   "restrictions": null
 }
 EOF

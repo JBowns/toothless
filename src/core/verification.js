@@ -142,17 +142,11 @@ const verifyGitHubRepositoryAdminPrivileges = ({ profile: { github: { repository
 
 const verifyGitHubDefaultBranchProtectionRulesMatchRemote = ({ vcs: { github: { branch_protection: { baseline, remote } } } }) => {
   const message = `GitHub default branch protection rules match the remote.`;
-  if (!remote.RequiredStatusChecks.includes(GITHUB_PUBLISH_CONTEXT)) {
+  if (!remote.required_status_checks.contexts.includes(GITHUB_PUBLISH_CONTEXT)) {
     console.log(`verifying ${message}`);
-    Object.entries(remote).forEach(([rule, value]) => {
-      if (rule in baseline) {
-        if (!_.isEqual(baseline[rule], value)) {
-          throw new Error(`the default '${JSON.stringify(baseline)}' branch protection rules do not match the remote '${JSON.stringify(remote)}'`);
-        }
-      } else {
-        throw new Error(`missing branch protection rule for '${rule}' the remote is set to '${value}'.`);
-      }
-    });
+    if (!_.isEqual(baseline, remote)) {
+      throw new Error(`the default '${JSON.stringify(baseline)}' branch protection rules do not match the remote '${JSON.stringify(remote)}'`);
+    }
   } else {
     console.log(`ignoring ${message}`);
   }
