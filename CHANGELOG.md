@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.2.0](https://github.com/jbowns/toothless/compare/v1.1.2...v1.2.0) (2019-08-05)
+
+
+### Features
+
+* **core:** moves verify under new fetch config action ([bd38973](https://github.com/jbowns/toothless/commit/bd38973))
+* **core:** published package details are now written to published-packages.json ([6220ba0](https://github.com/jbowns/toothless/commit/6220ba0))
+* **github:** pr review count is now supported when transitioning branch protection ([f7f71f7](https://github.com/jbowns/toothless/commit/f7f71f7))
+
+
+
 ### [1.1.2](https://github.com/jbowns/toothless/compare/v1.1.1...v1.1.2) (2019-08-01)
 
 
