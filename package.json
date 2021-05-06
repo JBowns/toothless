@@ -19,7 +19,7 @@
     "meow": "^5.0.0",
     "npm-registry-client": "^8.6.0",
     "simple-git": "^1.110.0",
-    "underscore": "^1.9.1"
+    "underscore": "^1.12.1"
   },
   "devDependencies": {
     "commitizen": "^3.1.1",
